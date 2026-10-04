@@ -1,5 +1,6 @@
 // src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
+
 import { ElMessage } from 'element-plus'
 
 const routes = [
@@ -82,94 +83,61 @@ const routes = [
     component: () => import('@/views/buyer/register.vue'),
     meta: { title: '买家注册', white: true }
   },
-  /*
-  // ========== 卖家后台 seller ==========
-  {
-    path: '/seller/login',
-    name: 'SellerLogin',
-    component: () => import('@/views/seller/login.vue'),
-    meta: { title: '卖家登录', white: true }
-  },
-  {
-    path: '/seller/home',
-    name: 'SellerHome',
-    component: () => import('@/views/seller/home.vue'),
-    meta: { title: '卖家中心首页', roles: ['seller'] }
-  },
-  {
-    path: '/seller/goods',
-    name: 'SellerGoodsList',
-    component: () => import('@/views/seller/goodsList.vue'),
-    meta: { title: '商品管理', roles: ['seller'] }
-  },
-  {
-    path: '/seller/goods/add',
-    name: 'SellerGoodsAdd',
-    component: () => import('@/views/seller/goodsAdd.vue'),
-    meta: { title: '新增商品', roles: ['seller'] }
-  },
-  {
-    path: '/seller/goods/edit/:id',
-    name: 'SellerGoodsEdit',
-    component: () => import('@/views/seller/goodsEdit.vue'),
-    meta: { title: '编辑商品', roles: ['seller'] }
-  },
-  {
-    path: '/seller/order',
-    name: 'SellerOrderList',
-    component: () => import('@/views/seller/orderList.vue'),
-    meta: { title: '卖家订单列表', roles: ['seller'] }
-  },
-  {
-    path: '/seller/order/:orderNo',
-    name: 'SellerOrderDetail',
-    component: () => import('@/views/seller/orderDetail.vue'),
-    meta: { title: '卖家订单详情', roles: ['seller'] }
-  },
-  // ========== 平台管理员后台 admin ==========
-  {
-    path: '/admin/login',
-    name: 'AdminLogin',
-    component: () => import('@/views/admin/login.vue'),
-    meta: { title: '管理员登录', white: true }
-  },
-  {
-    path: '/admin/home',
-    name: 'AdminHome',
-    component: () => import('@/views/admin/home.vue'),
-    meta: { title: '平台后台首页', roles: ['admin'] }
-  },
-  {
-    path: '/admin/category',
-    name: 'CategoryManage',
-    component: () => import('@/views/admin/category.vue'),
-    meta: { title: '商品分类管理', roles: ['admin'] }
-  },
-  {
-    path: '/admin/user/buyer',
-    name: 'BuyerUserManage',
-    component: () => import('@/views/admin/userBuyer.vue'),
-    meta: { title: '买家用户管理', roles: ['admin'] }
-  },
-  {
-    path: '/admin/user/seller',
-    name: 'SellerUserManage',
-    component: () => import('@/views/admin/userSeller.vue'),
-    meta: { title: '卖家用户管理', roles: ['admin'] }
-  },
-  {
-    path: '/admin/goods',
-    name: 'AdminGoodsList',
-    component: () => import('@/views/admin/goodsList.vue'),
-    meta: { title: '全平台商品', roles: ['admin'] }
-  },
-  {
-    path: '/admin/order',
-    name: 'AdminOrderList',
-    component: () => import('@/views/admin/orderList.vue'),
-    meta: { title: '全平台订单', roles: ['admin'] }
-  },
-  */
+  // ========== 卖家模块路由 ==========
+{
+  path: '/seller/apply',
+  name: 'SellerApply',
+  component: () => import('@/views/seller/apply.vue'),
+  meta: { title: '卖家入驻申请', roles: [] }
+},
+{
+  path: '/seller/apply/status',
+  name: 'SellerApplyStatus',
+  component: () => import('@/views/seller/applyStatus.vue'),
+  meta: { title: '入驻申请状态查询', roles: [] }
+},
+{
+  path: '/seller/login',
+  name: 'SellerLogin',
+  component: () => import('@/views/seller/login.vue'),
+  meta: { title: '卖家登录', roles: [] }
+},
+// 卖家后台布局父路由
+{
+  path: '/seller',
+  name: 'SellerLayout',
+  component: () => import('@/views/seller/layout.vue'),
+  redirect: '/seller/home',
+  meta: { roles: ['seller'] },
+  children: [
+    {
+      path: 'home',
+      name: 'SellerHome',
+      component: () => import('@/views/seller/home.vue'),
+      meta: { title: '卖家工作台', roles: ['seller'] }
+    },
+    {
+      path: 'profile',
+      name: 'SellerProfile',
+      component: () => import('@/views/seller/profile.vue'),
+      meta: { title: '企业资料修改', roles: ['seller'] }
+    },
+    {
+      path: 'password',
+      name: 'SellerPassword',
+      component: () => import('@/views/seller/password.vue'),
+      meta: { title: '修改密码', roles: ['seller'] }
+    },
+    {
+      path: 'goods',
+      name: 'SellerGoods',
+      // 预留商品管理页面，后面开发，先占位
+      component: () => import('@/views/seller/goods.vue'),
+      meta: { title: '商品管理', roles: ['seller'] }
+    }
+  ]
+},
+
   // 404兜底
   {
     path: '/:pathMatch(.*)*',
@@ -182,37 +150,56 @@ const router = createRouter({
 })
 // =========== 全局路由守卫 ===========
 router.beforeEach((to, from, next) => {
-  document.title = to.meta.title || '在线商城'
-  // 白名单页面：直接放行，不需要token
-  if (to.meta.white) {
+  document.title = to.meta.title || 'NiuShop商城'
+
+  // ✅ 白名单：不需要登录、不需要角色权限的页面
+  const whiteList = [
+    '/',
+    '/seller/login',
+    '/seller/apply',
+    '/seller/apply/status',
+    '/user/login',
+    '/user/register'
+  ]
+
+  // 如果目标页面在白名单，直接放行
+  if (whiteList.includes(to.path)) {
     return next()
   }
 
   const token = localStorage.getItem('token')
   const role = localStorage.getItem('role')
 
-  // 无token，跳转对应登录页
+  // 没有token，跳转到买家登录（注意区分角色！）
   if (!token) {
+    // 如果访问卖家后台页面，跳卖家登录；否则跳买家登录
     if (to.path.startsWith('/seller')) {
-      ElMessage.warning('请先登录卖家账号')
       return next('/seller/login')
-    } else if (to.path.startsWith('/admin')) {
-      ElMessage.warning('请先登录管理员账号')
-      return next('/admin/login')
     } else {
-      ElMessage.warning('请先登录买家账号')
       return next('/user/login')
     }
   }
 
   // 有token，校验页面所需角色
-  if (to.meta.roles && !to.meta.roles.includes(role)) {
-    ElMessage.warning('当前账号无权限访问该页面')
-    return next('/')
+  if (to.meta.roles && to.meta.roles.length > 0) {
+    if (to.meta.roles.includes(role)) {
+      // 角色匹配，放行
+      return next()
+    } else {
+      // 角色不匹配，无权访问
+      ElMessage.warning('权限不足，无法访问该页面')
+      // 根据目标页面类型跳转对应登录页
+      if (to.path.startsWith('/seller')) {
+        return next('/seller/login')
+      } else {
+        return next('/')
+      }
+    }
   }
 
-  // 全部校验通过，放行
+  // 其余情况直接放行
   next()
 })
+
 
 export default router

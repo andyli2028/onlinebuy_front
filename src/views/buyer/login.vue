@@ -48,11 +48,14 @@ const handleLogin = async () => {
   try {
     const res = await buyerLogin(loginForm)
     // 保存token和角色
+  
     localStorage.setItem('token', res.access_token)
     localStorage.setItem('role', 'buyer')
+
     ElMessage.success('登录成功')
     router.push('/')
   } catch (err) {
+    console.error(err)
     ElMessage.error(err.response?.data?.detail || '登录失败，请检查账号密码')
   } finally {
     loading.value = false
